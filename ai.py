@@ -1,4 +1,5 @@
 from __future__ import absolute_import, division, print_function
+from cmath import inf
 from math import sqrt, log
 from game import Game, WHITE, BLACK, EMPTY
 import copy
@@ -28,6 +29,7 @@ class AI:
         self.simulator.reset(*state) #using * to unpack the state tuple
         self.root = Node(state, self.simulator.get_actions())
 
+
     def mcts_search(self):
 
         #TODO: Implement the main MCTS loop
@@ -39,6 +41,7 @@ class AI:
         self.simulator.reset(*self.root.state)
         for action in self.simulator.get_actions():
             action_win_rates[action] = 0
+
         return random.choice(self.simulator.get_actions()), action_win_rates
         # <- Delete this block
 
@@ -60,13 +63,19 @@ class AI:
 
         return action, action_win_rates
 
+
     def select(self, node):
 
         # TODO: select a child node
         # HINT: you can use 'is_terminal' field in the Node class to check if node is terminal node
         # NOTE: deterministic_test() requires using c=1 for best_child()
-
+        while not node.is_terminal:
+            if len(node.untried_actions) == 0: 
+                return self.expand(node) #still need to implement...
+            else: 
+                node = self.best_child(node) # still need to implement...
         return node
+
 
     def expand(self, node):
 
@@ -84,6 +93,7 @@ class AI:
 
         return child_node
 
+
     def best_child(self, node, c=1): 
 
         # TODO: determine the best child and action by applying the UCB formula
@@ -91,14 +101,22 @@ class AI:
         best_child_node = None # to store the child node with best UCB
         best_action = None # to store the action that leads to the best child
         action_ucb_table = {} # to store the UCB values of each child node (for testing)
-
+        best_val = -inf # Might not be able to import -inf for this assignment?
         # NOTE: deterministic_test() requires iterating in this order
         for child in node.children:
             # NOTE: deterministic_test() requires, in the case of a tie, choosing the FIRST action with 
             # the maximum upper confidence bound 
-            pass
+            action_ucb_table[child[1]] = (child[1].num_wins / child[1].num_visits) + c*sqrt( 
+                2*log(node.num_visits) / child[1].num_visits
+            )
+
+            if  best_val < action_ucb_table[child[1]]:
+                best_val = action_ucb_table[child[1]]
+                best_action = child[0]
+                best_child_node = child[1]
 
         return best_child_node, best_action, action_ucb_table
+
 
     def backpropagate(self, node, result):
 
@@ -106,6 +124,7 @@ class AI:
             # TODO: backpropagate the information about winner
             # IMPORTANT: each node should store the number of wins for the player of its **parent** node
             break
+
 
     def rollout(self, node):
 
