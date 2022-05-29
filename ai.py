@@ -80,9 +80,11 @@ class AI:
     def expand(self, node):
 
         # TODO: add a new child node from an untried action and return this new node
+        
+        #reset the simulator state to the passed in node's state
+        self.simulator.reset(*node.state) #unsure if necessary
 
         child_node = None #choose a child node to grow the search tree
-
         # NOTE: passing the deterministic_test() requires popping an action like this
         action = node.untried_actions.pop(0)
         (row, col) = action
@@ -131,7 +133,13 @@ class AI:
 
     def rollout(self, node):
 
+        #reset the simulator state to the passed in node's state
+        self.simulator.reset(*node.state)
         # TODO: rollout (called DefaultPolicy in the slides)
+        while not self.simulator.game_over: 
+            action = self.simulator.rand_move()
+            (row, col) = action
+            self.simulator.place(row,col)
 
         # HINT: you may find the following methods useful:
         #   self.simulator.reset(*node.state)
