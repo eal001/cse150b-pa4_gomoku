@@ -85,7 +85,10 @@ class AI:
 
         # NOTE: passing the deterministic_test() requires popping an action like this
         action = node.untried_actions.pop(0)
-
+        (row, col) = action
+        self.simulator.place(row, col)
+        child_node = Node(self.simulator.state(), self.simulator.get_actions(), parent=node)
+        node.children.append(child_node)
         # NOTE: Make sure to add the new node to node.children
         # NOTE: You may find the following methods useful:
         #   self.simulator.state()
