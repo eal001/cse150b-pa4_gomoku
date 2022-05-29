@@ -38,14 +38,15 @@ class AI:
         action_win_rates = {} #store the table of actions and their ucb values
 
         # TODO: Delete the following block ->
-        self.simulator.reset(*self.root.state)
-        for action in self.simulator.get_actions():
-            action_win_rates[action] = 0
+        # self.simulator.reset(*self.root.state)
+        # for action in self.simulator.get_actions():
+        #     action_win_rates[action] = 0
 
-        return random.choice(self.simulator.get_actions()), action_win_rates
+        # return random.choice(self.simulator.get_actions()), action_win_rates
         # <- Delete this block
 
         # TODO: Implement the MCTS Loop
+        self.simulator.reset(*self.root.state)
         while(iters < BUDGET):
             if ((iters + 1) % 100 == 0):
                 # NOTE: if your terminal driver doesn't support carriage returns you can use: 
@@ -53,7 +54,10 @@ class AI:
                 print("\riters/budget: {}/{}".format(iters + 1, BUDGET), end="")
 
             # TODO: select a node, rollout, and backpropagate
-
+            node = self.select(self.root.state)
+            node = self.expand(node) #idk if we do both, or if the expand withion the 
+            winner = self.rollout(node)
+            self.backpropagate(node, winner)
             iters += 1
         print()
 
@@ -71,9 +75,9 @@ class AI:
         # NOTE: deterministic_test() requires using c=1 for best_child()
         while not node.is_terminal:
             if len(node.untried_actions) == 0: 
-                return self.expand(node) #still need to implement...
+                return self.expand(node)
             else: 
-                node = self.best_child(node) # still need to implement...
+                node = self.best_child(node)
         return node
 
 
@@ -128,8 +132,10 @@ class AI:
         while (node is not None):
             # TODO: backpropagate the information about winner
             # IMPORTANT: each node should store the number of wins for the player of its **parent** node
-            break
-
+            node.num_wins += result[node.parent.state[0]]
+            node.num_visits += 1
+            node = node.parent
+            
 
     def rollout(self, node):
 
