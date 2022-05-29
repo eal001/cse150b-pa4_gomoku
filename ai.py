@@ -54,9 +54,10 @@ class AI:
                 print("\riters/budget: {}/{}".format(iters + 1, BUDGET), end="")
 
             # TODO: select a node, rollout, and backpropagate
-            node = self.select(self.root.state)
-            node = self.expand(node) #idk if we do both, or if the expand withion the 
+            node = self.select(self.root)
+            # node = self.expand(node) #idk if we do both, or if the expand withion the 
             winner = self.rollout(node)
+            # print(self.root)
             self.backpropagate(node, winner)
             iters += 1
         print()
@@ -73,11 +74,11 @@ class AI:
         # TODO: select a child node
         # HINT: you can use 'is_terminal' field in the Node class to check if node is terminal node
         # NOTE: deterministic_test() requires using c=1 for best_child()
-        while not node.is_terminal:
+        while not len(node.children) == 0 or node.is_terminal:
             if len(node.untried_actions) == 0: 
                 return self.expand(node)
             else: 
-                node = self.best_child(node)
+                node = self.best_child(node)[0]
         return node
 
 
@@ -129,7 +130,7 @@ class AI:
 
     def backpropagate(self, node, result):
 
-        while (node is not None):
+        while (node is not None and node.parent is not None):
             # TODO: backpropagate the information about winner
             # IMPORTANT: each node should store the number of wins for the player of its **parent** node
             node.num_wins += result[node.parent.state[0]]
