@@ -21,6 +21,7 @@ class Node:
 # NOTE: deterministic_test() requires BUDGET = 1000
 # You can try higher or lower values to see how the AI's strength changes
 BUDGET = 1000
+EPSILON = 0.0001
 
 class AI:
     # NOTE: modifying this block is not recommended because it affects the random number sequences
@@ -54,6 +55,7 @@ class AI:
                 print("\riters/budget: {}/{}".format(iters + 1, BUDGET), end="")
 
             # TODO: select a node, rollout, and backpropagate
+            # print(self.root.untried_actions)
             node = self.select(self.root)
             # node = self.expand(node) #idk if we do both, or if the expand withion the 
             winner = self.rollout(node)
@@ -74,8 +76,8 @@ class AI:
         # TODO: select a child node
         # HINT: you can use 'is_terminal' field in the Node class to check if node is terminal node
         # NOTE: deterministic_test() requires using c=1 for best_child()
-        while not len(node.children) == 0 or node.is_terminal:
-            if len(node.untried_actions) == 0: 
+        while (node == self.root) or (not len(node.children) == 0) or (not node.is_terminal):
+            if len(node.untried_actions) != 0:
                 return self.expand(node)
             else: 
                 node = self.best_child(node)[0]
@@ -86,7 +88,7 @@ class AI:
 
         # TODO: add a new child node from an untried action and return this new node
         
-        #reset the simulator state to the passed in node's state
+        # reset the simulator state to the passed in node's state
         self.simulator.reset(*node.state) #unsure if necessary
 
         child_node = None #choose a child node to grow the search tree
@@ -95,7 +97,7 @@ class AI:
         (row, col) = action
         self.simulator.place(row, col)
         child_node = Node(self.simulator.state(), self.simulator.get_actions(), parent=node)
-        node.children.append(child_node)
+        node.children.append((action, child_node))
         # NOTE: Make sure to add the new node to node.children
         # NOTE: You may find the following methods useful:
         #   self.simulator.state()
@@ -105,23 +107,25 @@ class AI:
 
 
     def best_child(self, node, c=1): 
-
         # TODO: determine the best child and action by applying the UCB formula
 
         best_child_node = None # to store the child node with best UCB
         best_action = None # to store the action that leads to the best child
         action_ucb_table = {} # to store the UCB values of each child node (for testing)
-        best_val = -inf # Might not be able to import -inf for this assignment?
+        best_val = -1
         # NOTE: deterministic_test() requires iterating in this order
         for child in node.children:
             # NOTE: deterministic_test() requires, in the case of a tie, choosing the FIRST action with 
             # the maximum upper confidence bound 
-            action_ucb_table[child[1]] = (child[1].num_wins / child[1].num_visits) + c*sqrt( 
-                2*log(node.num_visits) / child[1].num_visits
-            )
+            # exploration = 0
+            # if node.num_visits != 0:
+            exploration = 2*log( node.num_visits ) / (child[1].num_visits+EPSILON)
 
-            if  best_val < action_ucb_table[child[1]]:
-                best_val = action_ucb_table[child[1]]
+            action_ucb_table[child[0]] = (child[1].num_wins / (child[1].num_visits+EPSILON)) + c*sqrt( 
+                exploration
+            )
+            if  best_val < action_ucb_table[child[0]]:
+                best_val = action_ucb_table[child[0]]
                 best_action = child[0]
                 best_child_node = child[1]
 
@@ -129,10 +133,14 @@ class AI:
 
 
     def backpropagate(self, node, result):
-
-        while (node is not None and node.parent is not None):
+        while (node is not None):
             # TODO: backpropagate the information about winner
             # IMPORTANT: each node should store the number of wins for the player of its **parent** node
+            if(node.parent == None):
+                node.num_wins = result[node.state[0]]
+                node.num_visits+= 1
+                return
+            
             node.num_wins += result[node.parent.state[0]]
             node.num_visits += 1
             node = node.parent
